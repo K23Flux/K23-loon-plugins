@@ -16,7 +16,7 @@
 
 | 插件 | 用途 | 一键导入 | 订阅链接 |
 | --- | --- | --- | --- |
-| （暂无） | | | |
+| NodeSeek 外链直跳 | 跳过 NodeSeek 的外链提醒页，直接打开目标地址 | [一键导入](https://www.nsloon.com/openloon/import?plugin=https://raw.githubusercontent.com/K23Flux/K23-loon-plugins/main/plugins/nodeseek-jump.lpx) | `https://raw.githubusercontent.com/K23Flux/K23-loon-plugins/main/plugins/nodeseek-jump.lpx` |
 
 ### 脚本与工具
 
