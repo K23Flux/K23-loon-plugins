@@ -6,6 +6,12 @@
 
 ## 插件列表
 
+### 站点聚合
+
+| 插件 | 用途 | 一键导入 | 订阅链接 |
+| --- | --- | --- | --- |
+| NodeSeek 聚合 | NodeSeek 功能合集，每项都有独立开关：外链直跳、每日自动签到（自动获取 Cookie，默认每天 08:00–09:00 之间随机时间签到） | [一键导入](https://www.nsloon.com/openloon/import?plugin=https://raw.githubusercontent.com/K23Flux/K23-loon-plugins/main/plugins/nodeseek.lpx) | `https://raw.githubusercontent.com/K23Flux/K23-loon-plugins/main/plugins/nodeseek.lpx` |
+
 ### 去广告
 
 | 插件 | 用途 | 一键导入 | 订阅链接 |
@@ -16,7 +22,7 @@
 
 | 插件 | 用途 | 一键导入 | 订阅链接 |
 | --- | --- | --- | --- |
-| NodeSeek 外链直跳 | 跳过 NodeSeek 的外链提醒页，直接打开目标地址 | [一键导入](https://www.nsloon.com/openloon/import?plugin=https://raw.githubusercontent.com/K23Flux/K23-loon-plugins/main/plugins/nodeseek-jump.lpx) | `https://raw.githubusercontent.com/K23Flux/K23-loon-plugins/main/plugins/nodeseek-jump.lpx` |
+| （暂无） | | | |
 
 ### 脚本与工具
 
@@ -46,7 +52,8 @@
 
 ## 插件文件约定
 
-- 位置：`plugins/`，扩展名 `.lpx`，文件名用小写英文和连字符。
+- 位置：`plugins/`，扩展名 `.lpx`，文件名用小写英文和连字符。插件用到的脚本放在 [`scripts/`](scripts/)，文件名以插件名开头。
+- 同一个站点的功能合并在一个插件里，每项功能用 `[Argument]` 的开关控制。
 - 头部元信息写完整：
 
   ```

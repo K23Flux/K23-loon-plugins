@@ -2,6 +2,12 @@
 
 最新的记录在最上面。
 
+## 2026-10-07 · plugins/nodeseek.lpx、scripts/nodeseek-checkin.js、plugins/nodeseek-jump.lpx（删除）、README.md、CHANGELOG.md
+
+- 改了什么：新增「NodeSeek 聚合」插件，把原来的「NodeSeek 外链直跳」并进来，再加上新功能「自动签到」，每项功能一个开关。签到脚本一份两用：登录状态下打开 `www.nodeseek.com` 时保存 Cookie 和 User-Agent（只在登录凭证 `session` 变化时通知）；每天在设定的那一小时里随机挑一分钟（默认 08:00–08:59，按手机本地时间），用保存的 Cookie 请求 `POST /api/attendance` 签到并通知结果；时段内没签上的，之后每两小时补签一次，失败只在当天第一次通知、最多重试 4 次。可调参数：外链直跳开关、自动签到开关、签到时段（整点，默认 8）、随机鸡腿、是否继续获取 Cookie、签到走的策略组（默认留空，跟随分流规则）。删除 `plugins/nodeseek-jump.lpx`；新建 `scripts/` 目录放脚本；README 新增「站点聚合」分类，并补充脚本存放和同站点合并的约定。
+- 为什么：NodeSeek 的功能以后还会加，合成一个插件按开关管理，不用每个功能装一个插件；签到想每天自动做，时间在早上 8 点到 9 点之间随机、不固定在同一分钟，Cookie 不用手动抄。
+- 影响什么：旧的 `nodeseek-jump.lpx` 订阅链接失效，已经导入过的要在 Loon 里删掉旧插件，重新导入 `nodeseek.lpx`。仍然只对 `www.nodeseek.com` 做 MITM，要求 Loon 3.5.1(978) 以上。Cookie 只存在本机 Loon 的持久化存储里，不进仓库。NodeSeek 有 Cloudflare 防护，后台签到可能被拦，脚本会提示。签到时段内脚本每分钟被唤起一次（没到时间就立刻退出），Loon 的脚本日志里会多出这些记录。签到接口对照过油猴脚本「星渊NS助手」的自动签到模块；脚本逻辑只用模拟数据跑过，整个插件还没有在 Loon 里实测。
+
 ## 2026-10-07 · plugins/nodeseek-jump.lpx、README.md、CHANGELOG.md、plugins/.gitkeep
 
 - 改了什么：新增第一个插件「NodeSeek 外链直跳」。用新版 Rewrite 语法匹配 `nodeseek.com/jump?to=...`，把提醒页的响应体换成一小段 HTML/JS，由它解码 `to` 参数并直接跳转；只放行 http/https 地址，其他情况显示「无效的跳转地址」。README「重定向与重写」分类加上这一行，带一键导入和订阅链接；删掉占位用的 `plugins/.gitkeep`。
