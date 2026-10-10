@@ -15,13 +15,14 @@
 
 | 插件 | 功能 | 一键导入 | 订阅链接 |
 | --- | --- | --- | --- |
-| NodeSeek 聚合 | 外链直跳：跳过外链提醒页，直接打开目标地址<br>自动签到：自动获取 Cookie，每天在设定时段内随机时间签到领鸡腿，漏签自动补签 | [一键导入](https://www.nsloon.com/openloon/import?plugin=https://raw.githubusercontent.com/K23Flux/K23-loon-plugins/main/plugins/nodeseek.lpx) | `https://raw.githubusercontent.com/K23Flux/K23-loon-plugins/main/plugins/nodeseek.lpx` |
+| NodeSeek 聚合 | 外链直跳：跳过外链提醒页，直接打开目标地址<br>自动签到：自动获取 Cookie，每天在设定时段内随机时间签到领鸡腿，漏签自动补签，结果可选推送到 Telegram | [一键导入](https://www.nsloon.com/openloon/import?plugin=https://raw.githubusercontent.com/K23Flux/K23-loon-plugins/main/plugins/nodeseek.lpx) | `https://raw.githubusercontent.com/K23Flux/K23-loon-plugins/main/plugins/nodeseek.lpx` |
 
 ## 使用前须知
 
 - **需要 MITM**：插件要解密对应站点的 HTTPS 流量才能生效，请先在 Loon 里安装并信任证书，并打开 MITM。
 - **版本要求**：Loon 3.5.1(978) 及以上。
 - **NodeSeek 自动签到怎么用**：装好插件后，用 Safari 登录并打开 [nodeseek.com](https://www.nodeseek.com)，看到「Cookie 获取成功」的通知就可以了，之后每天自动签到。Cookie 只保存在你自己手机的 Loon 里，不会上传到任何地方。
+- **Telegram 推送（可选）**：找 [@BotFather](https://t.me/BotFather) 创建一个机器人拿到 Bot Token，在 Telegram 里先给这个机器人发一条消息，再把 Bot Token 和你的 Chat ID（数字 ID）填进插件设置。两项都填了才会推送，只保存在你自己手机的 Loon 里。
 - **更新有延迟**：GitHub raw 链接有几分钟缓存，仓库刚更新时可能拉不到最新内容，稍等再刷新。
 
 ## 更新记录

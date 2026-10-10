@@ -2,6 +2,12 @@
 
 最新的记录在最上面。
 
+## 2026-10-10 · plugins/nodeseek.lpx、scripts/nodeseek-checkin.js、README.md、CHANGELOG.md
+
+- 改了什么：NodeSeek 自动签到加上可选的 Telegram 推送。插件设置多了两项：「Telegram Bot Token」和「Telegram Chat ID」，两项都填了，签到结果（签到成功、Cookie 失效、被 Cloudflare 拦截、其他失败、还没有 Cookie）除了本机通知，还会通过自己的机器人发一条到 Telegram；有一项没填就和以前一样只发本机通知。推送失败只写进脚本日志，不影响签到本身。「Cookie 获取成功 / 已更新」只发本机通知，不推 Telegram。
+- 为什么：手机通知容易划掉，想在 Telegram 里留一份签到记录，和别的签到通知放在一起看。
+- 影响什么：已经装了插件的，在 Loon 里更新插件后才有这两项设置；不填就没有任何变化。Token 和 Chat ID 只存在本机 Loon 的插件设置里，不进仓库。推送请求发往 `api.telegram.org`，按 Loon 的分流规则走，需要能连上 Telegram 的节点。脚本逻辑只用模拟数据跑过（填了、没填、只填一项、推送失败几种情况），还没有在 Loon 里实测。
+
 ## 2026-10-07 · plugins/nodeseek.lpx、scripts/nodeseek-checkin.js、plugins/nodeseek-jump.lpx（删除）、README.md、CHANGELOG.md
 
 - 改了什么：新增「NodeSeek 聚合」插件，把原来的「NodeSeek 外链直跳」并进来，再加上新功能「自动签到」，每项功能一个开关。签到脚本一份两用：登录状态下打开 `www.nodeseek.com` 时保存 Cookie 和 User-Agent（只在登录凭证 `session` 变化时通知）；每天在设定的那一小时里随机挑一分钟（默认 08:00–08:59，按手机本地时间），用保存的 Cookie 请求 `POST /api/attendance` 签到并通知结果；时段内没签上的，之后每两小时补签一次，失败只在当天第一次通知、最多重试 4 次。可调参数：外链直跳开关、自动签到开关、签到时段（整点，默认 8）、随机鸡腿、是否继续获取 Cookie、签到走的策略组（默认留空，跟随分流规则）。删除 `plugins/nodeseek-jump.lpx`；新建 `scripts/` 目录放脚本；README 改成面向访客的主页：安装方法、插件列表、使用前须知，去掉仓库内部的维护约定和填写模板。

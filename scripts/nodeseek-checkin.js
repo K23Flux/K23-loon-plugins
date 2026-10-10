@@ -10,6 +10,9 @@
  *      脚本自己记着当天的随机时间和是否签过，没到时间或已签过就直接退出。
  *
  * Cookie 只保存在本机 Loon 的持久化存储里，不会上传到任何地方。
+ *
+ * Telegram 推送（可选）：在插件设置里填了 Bot Token 和 Chat ID 后，签到结果除了本机通知，
+ * 还会通过你自己的机器人发到 Telegram。两项只存在本机 Loon 的插件设置里，不在仓库里。
  */
 
 const NAME = "NodeSeek 签到";
@@ -31,11 +34,42 @@ const RANDOM = flag(args.random, true);
 const HOUR = /^\d{1,2}$/.test(String(args.hour)) && Number(args.hour) < 24 ? Number(args.hour) : 8;
 // 签到请求指定走的策略组或节点；留空（或参数没被替换）就按分流规则走
 const POLICY = typeof args.policy === "string" && !/^\{.*\}$/.test(args.policy.trim()) ? args.policy.trim() : "";
+// Telegram 推送：两项都填了才发；没填（或参数没被替换）就只发本机通知
+function textArg(value) {
+  const text = typeof value === "string" ? value.trim() : "";
+  return /^\{.*\}$/.test(text) ? "" : text;
+}
+const TG_TOKEN = textArg(args.tgToken);
+const TG_CHAT = textArg(args.tgChat);
 const MAX_FAILS = 4; // 一天最多失败这么多次就不再试
 const RETRY_MINUTES = 30; // 失败后隔多久再试
 
 function notify(subtitle, body) {
   $notification.post(NAME, subtitle, body || "");
+}
+
+// 把一条结果发到 Telegram，发完（不管成功失败）调用 done。推送失败只记日志，不影响签到结果
+function pushTelegram(subtitle, body, done) {
+  if (!TG_TOKEN || !TG_CHAT) return done();
+  const request = {
+    url: `https://api.telegram.org/bot${TG_TOKEN}/sendMessage`,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ chat_id: TG_CHAT, text: `${NAME}\n${subtitle}${body ? "\n" + body : ""}` }),
+    timeout: 8000,
+  };
+  $httpClient.post(request, (error, response, data) => {
+    const status = response && response.status;
+    if (error || status !== 200) {
+      console.log(`[${NAME}] Telegram 推送失败：${error || "HTTP " + status + " " + String(data).slice(0, 200)}`);
+    }
+    done();
+  });
+}
+
+// 本机通知 + Telegram 推送，都发完再结束脚本
+function report(subtitle, body) {
+  notify(subtitle, body);
+  pushTelegram(subtitle, body, () => $done());
 }
 
 function header(headers, name) {
@@ -120,7 +154,7 @@ function checkin() {
     if (!state.noCookie) {
       state.noCookie = true;
       saveState(state);
-      notify("还没有 Cookie", "先用 Safari 登录 www.nodeseek.com，看到「Cookie 获取成功」通知后会自动补签");
+      return report("还没有 Cookie", "先用 Safari 登录 www.nodeseek.com，看到「Cookie 获取成功」通知后会自动补签");
     }
     return $done();
   }
@@ -148,7 +182,7 @@ function checkin() {
     if (state.fails >= MAX_FAILS) state.done = true;
     saveState(state);
     console.log(`[${NAME}] 第 ${state.fails} 次失败：${subtitle} ${body}`);
-    if (state.fails === 1) notify(subtitle, `${body}（稍后会自动重试）`);
+    if (state.fails === 1) return report(subtitle, `${body}（稍后会自动重试）`);
     $done();
   }
 
@@ -167,8 +201,7 @@ function checkin() {
       saveState(state);
       const gain = json.gain !== undefined ? `本次 +${json.gain} 鸡腿` : "";
       const current = json.current !== undefined ? `，当前共 ${json.current} 鸡腿` : "";
-      notify("签到成功", gain || current ? `${gain}${current}` : json.message);
-      return $done();
+      return report("签到成功", gain || current ? `${gain}${current}` : json.message);
     }
     if (json && /已完成签到|重复/.test(json.message || "")) {
       // 今天已经签过（比如手动签了），记下来就行，不打扰

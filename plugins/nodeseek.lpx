@@ -7,11 +7,13 @@
 
 [Argument]
 jump = switch,true,tag=外链直跳,desc=跳过外链提醒页（/jump?to=...），直接打开目标地址
-checkin = switch,true,tag=自动签到,desc=每天在下面的时段里随机时间自动签到领鸡腿，成功或失败都会通知
+checkin = switch,true,tag=自动签到,desc=每天在下面的时段里随机时间自动签到领鸡腿，成功或失败都会通知（可选同时推送到 Telegram）
 hour = select,"8","6","7","9","10","11","12","18","20","22",tag=签到时段,desc=从这个整点开始的一小时内随机挑一个时间签到，每天时间都不一样。默认 8，即每天 08:00–08:59 之间（按手机本地时间，手机是北京时间就是北京时间）
 random = switch,true,tag=随机鸡腿,desc=开：试试手气，随机数量；关：固定数量
 captureCookie = switch,true,tag=获取 Cookie,desc=开着时，用 Safari 登录并打开 NodeSeek 会自动保存或更新签到用的 Cookie；拿到后可以关掉
 policy = input,"",tag=签到走的策略组,desc=一般留空，签到请求按你的分流规则走。只有签到被 Cloudflare 拦截时才填：写你平时访问 NodeSeek 用的策略组或节点的名称
+tgToken = input,"",tag=Telegram Bot Token,desc=可选。填了 Bot Token 和下面的 Chat ID，签到结果会同时通过你自己的机器人发到 Telegram；留空就只发本机通知。Token 找 @BotFather 创建机器人获得
+tgChat = input,"",tag=Telegram Chat ID,desc=可选。接收消息的会话 ID（个人就是你的数字 ID）。要先在 Telegram 里给机器人发一条消息，机器人才能给你发
 
 [Rewrite]
 # 外链直跳
@@ -21,9 +23,9 @@ response if ${jump} == true && ${url} ~= /^https?:\/\/(www\.)?nodeseek\.com\/jum
 # 自动签到
 http-request ^https:\/\/www\.nodeseek\.com\/($|\?|api\/|post-|board|notification|space\/) script-path=https://raw.githubusercontent.com/K23Flux/K23-loon-plugins/main/scripts/nodeseek-checkin.js, timeout=10, tag=NodeSeek 获取 Cookie, enable={captureCookie}
 # 签到时段内每分钟触发一次，脚本到了当天的随机时间才真正签到
-cron * {hour} * * * script-path=https://raw.githubusercontent.com/K23Flux/K23-loon-plugins/main/scripts/nodeseek-checkin.js, timeout=30, tag=NodeSeek 自动签到, enable={checkin}, argument=[{hour},{random},{policy}]
+cron * {hour} * * * script-path=https://raw.githubusercontent.com/K23Flux/K23-loon-plugins/main/scripts/nodeseek-checkin.js, timeout=30, tag=NodeSeek 自动签到, enable={checkin}, argument=[{hour},{random},{policy},{tgToken},{tgChat}]
 # 补签：时段内没签上（手机没联网、Loon 没开、签到失败）时，之后每两小时再试一次
-cron 20 */2 * * * script-path=https://raw.githubusercontent.com/K23Flux/K23-loon-plugins/main/scripts/nodeseek-checkin.js, timeout=30, tag=NodeSeek 补签, enable={checkin}, argument=[{hour},{random},{policy}]
+cron 20 */2 * * * script-path=https://raw.githubusercontent.com/K23Flux/K23-loon-plugins/main/scripts/nodeseek-checkin.js, timeout=30, tag=NodeSeek 补签, enable={checkin}, argument=[{hour},{random},{policy},{tgToken},{tgChat}]
 
 [MITM]
 hostname = www.nodeseek.com
