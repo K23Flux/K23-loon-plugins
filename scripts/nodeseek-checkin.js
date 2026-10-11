@@ -144,23 +144,28 @@ function checkin() {
   const state = loadState(now);
   const target = `${pad(state.hour)}:${pad(state.minute)}`;
 
-  if (state.done) return $done();
-  if (now.getTime() < state.retryAt) return $done();
+  // 每条退出都写一行日志，方便在 Loon 的脚本日志里看它为什么没签
+  function quit(reason) {
+    console.log(`[${NAME}] ${reason}`);
+    $done();
+  }
+  console.log(`[${NAME}] 时段 ${state.hour} 点，今天的签到时间 ${target}，Telegram 推送${TG_TOKEN && TG_CHAT ? "已填" : "没填"}`);
+  if (state.done) return quit(state.fails >= MAX_FAILS ? `今天已失败 ${state.fails} 次，不再重试` : "今天已经签过，跳过");
+  if (now.getTime() < state.retryAt) return quit(`上次失败，${Math.ceil((state.retryAt - now.getTime()) / 60000)} 分钟后再试`);
 
   // 离今天的随机时间还有多久（毫秒）。插件每 5 分钟唤起一次：
   // 还早就退出等下一次；不到 5 分钟就在这次里等到点再签，这样签到时间能精确到随机的那一分钟
   const targetAt = new Date(now.getFullYear(), now.getMonth(), now.getDate(), state.hour, state.minute, 0).getTime();
   const wait = targetAt - now.getTime();
-  if (wait > (WAKE_MINUTES * 60 - 30) * 1000) return $done(); // 正好落在下一次唤起的那一分钟，留给下一次
+  if (wait > (WAKE_MINUTES * 60 - 30) * 1000) return quit("还没到时间"); // 包括正好落在下一次唤起那一分钟的情况
   if (wait > 0) {
-    console.log(`[${NAME}] 今天的签到时间是 ${target}，${Math.ceil(wait / 1000)} 秒后签到`);
+    console.log(`[${NAME}] ${Math.ceil(wait / 1000)} 秒后签到`);
     return setTimeout(() => doCheckin(state), wait);
   }
   doCheckin(state);
 }
 
 function doCheckin(state) {
-
   const cookie = $persistentStore.read(KEY_COOKIE);
   if (!cookie) {
     if (!state.noCookie) {
@@ -168,6 +173,7 @@ function doCheckin(state) {
       saveState(state);
       return report("还没有 Cookie", "先用 Safari 登录 www.nodeseek.com，看到「Cookie 获取成功」通知后会自动补签");
     }
+    console.log(`[${NAME}] 还没有 Cookie（今天已经提醒过）`);
     return $done();
   }
 
@@ -216,10 +222,10 @@ function doCheckin(state) {
       return report("签到成功", gain || current ? `${gain}${current}` : json.message);
     }
     if (json && /已完成签到|重复/.test(json.message || "")) {
-      // 今天已经签过（比如手动签了），记下来就行，不打扰
+      // 今天已经签过（比如手动签了）：记下来，告诉一声，当天不再请求
       state.done = true;
       saveState(state);
-      return $done();
+      return report("今天已经签过了", "不是这次自动签的（可能手动签过），今天不再重复签到");
     }
     if (status === 401 || (json && /USER NOT FOUND|未登录|登录/i.test(json.message || ""))) {
       return fail("Cookie 已失效", "重新用 Safari 登录 www.nodeseek.com，会自动更新 Cookie");
