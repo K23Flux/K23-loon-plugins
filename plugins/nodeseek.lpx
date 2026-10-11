@@ -22,10 +22,9 @@ response if ${jump} == true && ${url} ~= /^https?:\/\/(www\.)?nodeseek\.com\/jum
 [Script]
 # 自动签到
 http-request ^https:\/\/www\.nodeseek\.com\/($|\?|api\/|post-|board|notification|space\/) script-path=https://raw.githubusercontent.com/K23Flux/K23-loon-plugins/main/scripts/nodeseek-checkin.js, timeout=10, tag=NodeSeek 获取 Cookie, enable={captureCookie}
-# 签到时段内每分钟触发一次，脚本到了当天的随机时间才真正签到
-cron * {hour} * * * script-path=https://raw.githubusercontent.com/K23Flux/K23-loon-plugins/main/scripts/nodeseek-checkin.js, timeout=30, tag=NodeSeek 自动签到, enable={checkin}, argument=[{hour},{random},{policy},{tgToken},{tgChat}]
-# 补签：时段内没签上（手机没联网、Loon 没开、签到失败）时，之后每两小时再试一次
-cron 20 */2 * * * script-path=https://raw.githubusercontent.com/K23Flux/K23-loon-plugins/main/scripts/nodeseek-checkin.js, timeout=30, tag=NodeSeek 补签, enable={checkin}, argument=[{hour},{random},{policy},{tgToken},{tgChat}]
+# 每 5 分钟唤起一次脚本，脚本自己判断：没到当天的随机时间就立刻退出，快到了就等到那一分钟再签到；
+# 没签上（手机没联网、Loon 没开、签到失败）时，后面的唤起会自动补签
+cron "*/5 6-23 * * *" script-path=https://raw.githubusercontent.com/K23Flux/K23-loon-plugins/main/scripts/nodeseek-checkin.js, timeout=300, tag=NodeSeek 自动签到, enable={checkin}, argument=[{hour},{random},{policy},{tgToken},{tgChat}]
 
 [MITM]
 hostname = www.nodeseek.com

@@ -6,8 +6,9 @@
  * 同一个脚本两种用法，由插件 plugins/nodeseek.lpx 调用：
  *   1. http-request：登录状态下打开 www.nodeseek.com，自动保存 Cookie 和 User-Agent
  *   2. cron：每天在设定的那一小时里随机挑一分钟，用保存的 Cookie 去签到。
- *      插件让它在那一小时内每分钟触发一次，另外每两小时再触发一次用来补签；
- *      脚本自己记着当天的随机时间和是否签过，没到时间或已签过就直接退出。
+ *      插件每 5 分钟唤起它一次；脚本自己记着当天的随机时间和是否签过：
+ *      已签过或还早就直接退出，离随机时间不到 5 分钟就等到那一分钟再签，
+ *      过了时间还没签上（没联网、失败）就在后面的唤起里补签。
  *
  * Cookie 只保存在本机 Loon 的持久化存储里，不会上传到任何地方。
  *
@@ -43,6 +44,7 @@ const TG_TOKEN = textArg(args.tgToken);
 const TG_CHAT = textArg(args.tgChat);
 const MAX_FAILS = 4; // 一天最多失败这么多次就不再试
 const RETRY_MINUTES = 30; // 失败后隔多久再试
+const WAKE_MINUTES = 5; // 插件里 cron 每隔几分钟唤起一次脚本，要和 nodeseek.lpx 里的一致
 
 function notify(subtitle, body) {
   $notification.post(NAME, subtitle, body || "");
@@ -143,11 +145,21 @@ function checkin() {
   const target = `${pad(state.hour)}:${pad(state.minute)}`;
 
   if (state.done) return $done();
-  if (now.getHours() * 60 + now.getMinutes() < state.hour * 60 + state.minute) {
-    console.log(`[${NAME}] 今天的签到时间是 ${target}，还没到`);
-    return $done();
-  }
   if (now.getTime() < state.retryAt) return $done();
+
+  // 离今天的随机时间还有多久（毫秒）。插件每 5 分钟唤起一次：
+  // 还早就退出等下一次；不到 5 分钟就在这次里等到点再签，这样签到时间能精确到随机的那一分钟
+  const targetAt = new Date(now.getFullYear(), now.getMonth(), now.getDate(), state.hour, state.minute, 0).getTime();
+  const wait = targetAt - now.getTime();
+  if (wait > (WAKE_MINUTES * 60 - 30) * 1000) return $done(); // 正好落在下一次唤起的那一分钟，留给下一次
+  if (wait > 0) {
+    console.log(`[${NAME}] 今天的签到时间是 ${target}，${Math.ceil(wait / 1000)} 秒后签到`);
+    return setTimeout(() => doCheckin(state), wait);
+  }
+  doCheckin(state);
+}
+
+function doCheckin(state) {
 
   const cookie = $persistentStore.read(KEY_COOKIE);
   if (!cookie) {

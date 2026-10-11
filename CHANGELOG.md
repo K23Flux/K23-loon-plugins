@@ -2,6 +2,12 @@
 
 最新的记录在最上面。
 
+## 2026-10-11 · plugins/nodeseek.lpx、scripts/nodeseek-checkin.js、CHANGELOG.md
+
+- 改了什么：修 NodeSeek 自动签到不执行的问题。插件里两条定时任务原来写成 `cron * {hour} * * * script-path=…`，定时表达式没有加双引号，而且里面用了插件参数 `{hour}`；Loon 文档里的写法是 `cron "0 8 * * *" script-path=…`。现在改成一条固定的 `cron "*/5 6-23 * * *"`（6 点到 23 点每 5 分钟唤起一次，表达式里不再用参数），「签到时段」只由脚本自己判断。脚本相应调整：离当天的随机时间还早就立刻退出；不到 5 分钟就在这次运行里等到那一分钟再签到，签到时间仍然精确到随机的那一分钟；过了时间还没签上的，后面每次唤起都会补签（失败后仍是隔 30 分钟重试、一天最多 4 次、只在第一次失败时通知）。原来单独的「NodeSeek 补签」任务不再需要，已删除。
+- 为什么：装上插件后到了时段没有任何通知，成功、失败、「还没有 Cookie」都没有，说明定时脚本根本没被 Loon 执行（只要脚本跑过一次，至少会有一条通知）。
+- 影响什么：要在 Loon「插件」里更新 NodeSeek 聚合插件，再到「脚本」里更新脚本。更新后「脚本」页只剩「NodeSeek 获取 Cookie」和「NodeSeek 自动签到」两条。脚本日志里不再每分钟一条「还没到」的记录。脚本逻辑用模拟数据跑过（还早、等待后签、到点即签、补签、已签过、没有 Cookie、被 Cloudflare 拦截），还没有在 Loon 里实测；「原来的写法 Loon 解析不了」是对照文档的判断，没法在云端验证。
+
 ## 2026-10-10 · plugins/nodeseek.lpx、scripts/nodeseek-checkin.js、README.md、CHANGELOG.md
 
 - 改了什么：NodeSeek 自动签到加上可选的 Telegram 推送。插件设置多了两项：「Telegram Bot Token」和「Telegram Chat ID」，两项都填了，签到结果（签到成功、Cookie 失效、被 Cloudflare 拦截、其他失败、还没有 Cookie）除了本机通知，还会通过自己的机器人发一条到 Telegram；有一项没填就和以前一样只发本机通知。推送失败只写进脚本日志，不影响签到本身。「Cookie 获取成功 / 已更新」只发本机通知，不推 Telegram。
